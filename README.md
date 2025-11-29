@@ -72,6 +72,7 @@ cache/
 ### `discovery.js`
 
 Exports:
+
 - `discover(site, topic)` - Combined sitemap + Google search with deduplication
 - `discoverGoogleResults(site, topic)` - Google Search via SerpAPI (cached)
 - `discoverSitemapResults(site)` - Sitemap-based discovery
@@ -79,6 +80,7 @@ Exports:
 ### `sitemap-discovery.js`
 
 Exports:
+
 - `discoverFromSitemap(site, extractTitles)` - Fetch and parse XML sitemaps
 - `hasSitemapSupport(site)` - Check if site has sitemap
 - `getSitemapSites()` - Get list of supported sites
@@ -88,6 +90,7 @@ Supports 7 Bristol news sites with comprehensive historical coverage.
 ### `filter.js`
 
 Exports:
+
 - `filter(headline, snippet, topic)` - AI-powered relevance check
 
 Uses GPT-4o-mini to determine if an article is about the target topic.
@@ -95,9 +98,11 @@ Uses GPT-4o-mini to determine if an article is about the target topic.
 ### `scraper.js`
 
 Exports:
+
 - `scrape(url)` - Scrape article text with caching
 
 Features:
+
 - Text caching to avoid re-scraping
 - Uses Jina AI Reader API for intelligent content extraction
 - Returns clean, LLM-friendly markdown content
@@ -106,9 +111,11 @@ Features:
 ### `analyzer.js`
 
 Exports:
+
 - `analyze(site, text, title)` - Comprehensive article analysis
 
 Uses GPT-4o-mini to extract:
+
 - Sentiment (supportive/negative/neutral/mixed) + score (1-10)
 - Main and secondary angles
 - Framing, evidence type, voices
@@ -123,6 +130,9 @@ Uses GPT-4o-mini to extract:
 # Install dependencies
 npm install
 
+# Set up cache (optional - downloads 3.6 GB from Google Drive)
+./scripts/pull-cache.sh
+
 # Run the analyzer
 npm start
 
@@ -136,6 +146,18 @@ npm run eval-analyzer   # Evaluate analyzer prompt
 npm run eval-both       # Evaluate both prompts
 ```
 
+### Cache Setup
+
+The project uses a 3.6 GB cache stored on Google Drive via rclone. This is optional but recommended to avoid re-scraping articles.
+
+**First time setup:**
+
+1. Install rclone: `brew install rclone`
+2. Configure Google Drive: `rclone config` (see [CACHE-SETUP.md](CACHE-SETUP.md))
+3. Pull cache: `./scripts/pull-cache.sh`
+
+**See [CACHE-SETUP.md](CACHE-SETUP.md) for detailed instructions.**
+
 ### Configuration
 
 **Limit articles for testing:**
@@ -143,11 +165,12 @@ npm run eval-both       # Evaluate both prompts
 Edit `src/main.js` and set `MAX_ARTICLES_PER_SITE`:
 
 ```javascript
-const MAX_ARTICLES_PER_SITE = 10;  // Process only 10 articles per site
+const MAX_ARTICLES_PER_SITE = 10; // Process only 10 articles per site
 const MAX_ARTICLES_PER_SITE = null; // Process all discovered articles (unlimited)
 ```
 
 This is useful for:
+
 - Testing prompt changes on a small sample
 - Quick validation of the pipeline
 - Reviewing filter decisions before full run
@@ -155,11 +178,13 @@ This is useful for:
 ## Discovery Strategy
 
 1. **Sitemap Discovery** (for sites with XML sitemaps)
+
    - Comprehensive historical coverage
    - All articles back to 2017+
    - No recency bias
 
 2. **Google Search** (supplement or fallback)
+
    - Recent articles not yet in sitemaps
    - Sites without sitemap support
    - Cached to avoid duplicate API calls
@@ -184,6 +209,7 @@ For each site:
 ## Supported Sites
 
 ✅ **With Sitemap Support:**
+
 - Bristol247
 - Bristol Cable
 - Clifton Voice
@@ -193,6 +219,7 @@ For each site:
 - Bristol Post
 
 ❌ **Google Search Only:**
+
 - South Bristol Voice
 - Fishponds Voice
 - Filton Voice
@@ -217,11 +244,13 @@ Test and improve your prompts with labeled data.
 ### Workflow
 
 1. **Label Test Cases** - Mark cached results as correct/incorrect
+
    ```bash
    npm run label
    ```
 
 2. **Evaluate** - Test current prompts and see metrics
+
    ```bash
    npm run eval-filter     # Test filter prompt
    npm run eval-analyzer   # Test analyzer prompt
@@ -235,11 +264,13 @@ Test and improve your prompts with labeled data.
 ### Metrics
 
 **Filter:**
+
 - Accuracy, Precision, Recall, F1 Score
 - Confusion matrix
 - List of errors
 
 **Analyzer:**
+
 - Overall accuracy
 - Per-field accuracy (sentiment, main_angle, balance)
 - List of errors
@@ -247,6 +278,7 @@ Test and improve your prompts with labeled data.
 ### Simple Manual Process
 
 No automatic optimization - you control everything:
+
 - Review errors
 - Edit prompts in `prompts.js`
 - Re-test
@@ -267,16 +299,13 @@ Organized by workflow phase:
 - **`serp.json`** - Google Search results
   - Key: `site|topic|page`
   - Saves: API calls and rate limits
-  
 - **`sitemap_xml/`** - Raw XML sitemap files
   - One file per sitemap URL
   - Saves: Network requests (sitemaps are very static)
   - Rarely needs invalidation (sitemap structure doesn't change)
-  
 - **`sitemap_urls.json`** - Parsed sitemap results
   - Key: `site`
   - Saves: 30-60 seconds per site with sitemaps
-  
 - **`discover_output.json`** - Combined discovery results
   - Key: `site|topic`
   - Saves: Full discovery time (~1-2 minutes per site)
@@ -294,7 +323,6 @@ Organized by workflow phase:
   - Key: `url`
   - Contains: title, full article content, topic, full prompt
   - Review this file to see exactly what the AI saw when making decisions
-  
 - **`filter_output.json`** - AI relevance decisions
   - Key: `url`
   - Contains: `{ relevant: true/false, reasoning: "why this decision was made" }`

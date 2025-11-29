@@ -7,10 +7,10 @@ This repository has Git LFS configured but **cache files are excluded** from ver
 The `cache/` directory (3.6 GB) is **not committed** to Git:
 
 - Excluded via `.gitignore`
-- Contains regenerable data that doesn't need version control
-- Kept locally for development
+- Stored on Google Drive and synced via rclone
+- See [CACHE-SETUP.md](CACHE-SETUP.md) for setup instructions
 
-Git LFS is configured in `.gitattributes` for potential future use with large files.
+Git LFS was considered but we use rclone + Google Drive instead (free, no storage limits).
 
 ## Repository Size
 
