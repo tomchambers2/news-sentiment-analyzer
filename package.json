@@ -1,0 +1,26 @@
+{
+  "name": "bristol-news-analyzer",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Analyze Bristol news articles by topic",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "node src/main.js",
+    "serve": "npx http-server -p 8000 -o dashboard.html",
+    "label": "node prompt-optimizer/labeler.js",
+    "eval-filter": "node prompt-optimizer/evaluator.js filter",
+    "eval-analyzer": "node prompt-optimizer/evaluator.js analyzer",
+    "eval-both": "node prompt-optimizer/evaluator.js both"
+  },
+  "dependencies": {
+    "@ai-sdk/openai": "^0.0.66",
+    "@anthropic-ai/sdk": "^0.70.1",
+    "ai": "^3.0.0",
+    "axios": "^1.6.0",
+    "better-sqlite3": "^12.4.1",
+    "dotenv": "^16.4.0",
+    "openai": "^4.28.0",
+    "serpapi": "^2.1.0",
+    "xml2js": "^0.6.2"
+  }
+}
