@@ -1,81 +1,80 @@
 import "dotenv/config";
 import { existsSync, readFileSync } from "fs";
-import { filter } from "../src/filter.js";
-import { analyze } from "../src/analyzer.js";
+import { filterBatch } from "../src/filter-gpt.js";
+import Database from 'better-sqlite3';
 
 const TEST_CASES_FILE = "./prompt-optimizer/test_cases.json";
+const DB_PATH = "cache/cache.db";
 
 // Load test cases
 function loadTestCases() {
   if (!existsSync(TEST_CASES_FILE)) {
-    console.log("❌ No test cases found. Run labeler.js first.");
+    console.log("❌ No test cases found. Create test_cases.json first.");
     process.exit(1);
   }
   return JSON.parse(readFileSync(TEST_CASES_FILE, "utf-8"));
 }
 
-// Run filter on test cases
-async function runFilterTests(testCases) {
-  const results = [];
-
-  console.log(`\n🧪 Testing filter on ${testCases.length} cases...`);
-
-  for (let i = 0; i < testCases.length; i++) {
-    const testCase = testCases[i];
-    process.stdout.write(`\r  Progress: ${i + 1}/${testCases.length}`);
-
-    const result = await filter(
-      testCase.headline,
-      testCase.snippet,
-      testCase.topic
-    );
-
-    results.push({
-      input: testCase,
-      actual: result,
-      expected: testCase.expected,
-      correct: result === testCase.expected,
-    });
+// Load article content from SQLite cache
+function loadArticleContent(url) {
+  if (!existsSync(DB_PATH)) {
+    return null;
   }
-
-  console.log("\n");
-  return results;
+  const db = new Database(DB_PATH, { readonly: true });
+  const stmt = db.prepare('SELECT text FROM articles WHERE url = ?');
+  const row = stmt.get(url);
+  db.close();
+  return row ? row.text : null;
 }
 
-// Run analyzer on test cases
-async function runAnalyzerTests(testCases) {
-  const results = [];
+// Run filter on test cases
+async function runFilterTests(testCases, topicId, topicDescription) {
+  console.log(`\n🧪 Testing filter on ${testCases.length} cases...`);
+  console.log(`   Topic: ${topicId}\n`);
 
-  console.log(`\n🧪 Testing analyzer on ${testCases.length} cases...`);
+  // Load article content for each test case
+  const articlesWithContent = testCases.map(tc => {
+    const content = loadArticleContent(tc.url);
+    if (!content) {
+      console.log(`   ⚠️  No content for: ${tc.title?.substring(0, 50)}...`);
+    }
+    return {
+      ...tc,
+      content: content || tc.title // fallback to title if no content
+    };
+  });
 
-  for (let i = 0; i < testCases.length; i++) {
-    const testCase = testCases[i];
-    process.stdout.write(`\r  Progress: ${i + 1}/${testCases.length}`);
-
-    const result = await analyze("test", testCase.text, testCase.title);
-
-    // Check if key fields match
-    const sentimentMatch = result.sentiment === testCase.expected.sentiment;
-    const mainAngleMatch = result.main_angle === testCase.expected.main_angle;
-    const balanceMatch = result.balance === testCase.expected.balance;
-
-    // Overall correctness (all key fields must match)
-    const correct = sentimentMatch && mainAngleMatch && balanceMatch;
-
-    results.push({
-      input: testCase,
-      actual: result,
-      expected: testCase.expected,
-      correct,
-      field_accuracy: {
-        sentiment: sentimentMatch,
-        main_angle: mainAngleMatch,
-        balance: balanceMatch,
-      },
-    });
+  // Filter out cases without content
+  const validCases = articlesWithContent.filter(tc => tc.content && tc.content.length > 50);
+  
+  if (validCases.length < testCases.length) {
+    console.log(`   ⚠️  Only ${validCases.length}/${testCases.length} cases have content\n`);
   }
 
-  console.log("\n");
+  // Run batch classification (bypasses cache by not using topicId in lookup)
+  const batchInput = validCases.map(tc => ({
+    url: tc.url,
+    title: tc.title,
+    content: tc.content
+  }));
+
+  console.log(`   Running classification...`);
+  const classificationResults = await filterBatch(batchInput, topicId, topicDescription);
+
+  // Map results back to test cases
+  const results = validCases.map(tc => {
+    const classification = classificationResults.find(r => r.url === tc.url);
+    const actual = classification ? classification.relevant : null;
+    
+    return {
+      input: tc,
+      actual,
+      expected: tc.expected,
+      correct: actual === tc.expected,
+      reasoning: classification?.reasoning || 'N/A'
+    };
+  });
+
   return results;
 }
 
@@ -85,7 +84,6 @@ function evaluate(results) {
   const correct = results.filter((r) => r.correct).length;
   const accuracy = total > 0 ? correct / total : 0;
 
-  // Calculate precision, recall, F1 for binary classification
   const truePositives = results.filter(
     (r) => r.expected === true && r.actual === true
   ).length;
@@ -126,9 +124,9 @@ function evaluate(results) {
 }
 
 // Display results
-function displayResults(metrics, results, type) {
+function displayResults(metrics, results) {
   console.log("\n" + "=".repeat(60));
-  console.log(`📊 ${type.toUpperCase()} EVALUATION RESULTS`);
+  console.log(`📊 FILTER EVALUATION RESULTS`);
   console.log("=".repeat(60));
 
   console.log(`\n📈 Overall Metrics:`);
@@ -136,117 +134,59 @@ function displayResults(metrics, results, type) {
   console.log(`  Correct:        ${metrics.correct} (${(metrics.accuracy * 100).toFixed(1)}%)`);
   console.log(`  Incorrect:      ${metrics.incorrect} (${((1 - metrics.accuracy) * 100).toFixed(1)}%)`);
 
-  if (type === "filter") {
     console.log(`\n🎯 Classification Metrics:`);
     console.log(`  Precision:      ${(metrics.precision * 100).toFixed(1)}%`);
     console.log(`  Recall:         ${(metrics.recall * 100).toFixed(1)}%`);
     console.log(`  F1 Score:       ${(metrics.f1 * 100).toFixed(1)}%`);
 
     console.log(`\n📋 Confusion Matrix:`);
-    console.log(`  True Positives:  ${metrics.truePositives}`);
-    console.log(`  False Positives: ${metrics.falsePositives}`);
-    console.log(`  False Negatives: ${metrics.falseNegatives}`);
-    console.log(`  True Negatives:  ${metrics.trueNegatives}`);
-  } else if (type === "analyzer") {
-    // Calculate per-field accuracy
-    let sentimentCorrect = 0;
-    let mainAngleCorrect = 0;
-    let balanceCorrect = 0;
+  console.log(`  True Positives:  ${metrics.truePositives} (correctly identified as relevant)`);
+  console.log(`  False Positives: ${metrics.falsePositives} (wrongly marked relevant)`);
+  console.log(`  False Negatives: ${metrics.falseNegatives} (missed relevant articles)`);
+  console.log(`  True Negatives:  ${metrics.trueNegatives} (correctly rejected)`);
 
-    results.forEach((r) => {
-      if (r.field_accuracy.sentiment) sentimentCorrect++;
-      if (r.field_accuracy.main_angle) mainAngleCorrect++;
-      if (r.field_accuracy.balance) balanceCorrect++;
-    });
-
-    console.log(`\n🎯 Field Accuracy:`);
-    console.log(`  Sentiment:      ${sentimentCorrect}/${metrics.total} (${((sentimentCorrect / metrics.total) * 100).toFixed(1)}%)`);
-    console.log(`  Main Angle:     ${mainAngleCorrect}/${metrics.total} (${((mainAngleCorrect / metrics.total) * 100).toFixed(1)}%)`);
-    console.log(`  Balance:        ${balanceCorrect}/${metrics.total} (${((balanceCorrect / metrics.total) * 100).toFixed(1)}%)`);
-  }
-
-  // Show errors
-  const errors = results.filter((r) => !r.correct);
-
-  if (errors.length > 0) {
-    console.log(`\n❌ Errors (${errors.length} total):`);
+  // Show all results with reasoning
+  console.log(`\n📝 All Results:`);
     console.log("-".repeat(60));
 
-    errors.slice(0, 5).forEach((error, idx) => {
-      console.log(`\n[${idx + 1}] ${type === "filter" ? error.input.headline : error.input.title}`);
-      console.log(`  Expected: ${JSON.stringify(error.expected)}`);
-      console.log(`  Actual:   ${JSON.stringify(error.actual)}`);
-      if (error.input.reason) {
-        console.log(`  Reason:   ${error.input.reason}`);
-      }
-    });
-
-    if (errors.length > 5) {
-      console.log(`\n  ... and ${errors.length - 5} more errors`);
-    }
-  } else {
-    console.log(`\n✅ All test cases passed!`);
-  }
+  results.forEach((r, idx) => {
+    const icon = r.correct ? '✅' : '❌';
+    const status = r.actual ? 'RELEVANT' : 'NOT RELEVANT';
+    console.log(`\n${icon} [${idx + 1}] ${r.input.title?.substring(0, 60)}...`);
+    console.log(`   Expected: ${r.expected ? 'relevant' : 'not relevant'}`);
+    console.log(`   Actual:   ${status}`);
+    console.log(`   AI reasoning: "${r.reasoning}"`);
+    console.log(`   Your reason:  "${r.input.reason}"`);
+  });
 
   console.log("\n" + "=".repeat(60));
 }
 
-// Evaluate filter
-async function evaluateFilter() {
-  const testCases = loadTestCases().filter_test_cases;
-
-  if (testCases.length === 0) {
-    console.log("❌ No filter test cases found. Run labeler.js first.");
-    return;
-  }
-
-  console.log(`\n🔍 Evaluating Filter Prompt`);
-  console.log(`   Test cases: ${testCases.length}`);
-
-  const results = await runFilterTests(testCases);
-  const metrics = evaluate(results);
-
-  displayResults(metrics, results, "filter");
-}
-
-// Evaluate analyzer
-async function evaluateAnalyzer() {
-  const testCases = loadTestCases().analyzer_test_cases;
-
-  if (testCases.length === 0) {
-    console.log("❌ No analyzer test cases found. Run labeler.js first.");
-    return;
-  }
-
-  console.log(`\n🔍 Evaluating Analyzer Prompt`);
-  console.log(`   Test cases: ${testCases.length}`);
-
-  const results = await runAnalyzerTests(testCases);
-  const metrics = evaluate(results);
-
-  displayResults(metrics, results, "analyzer");
-}
-
 // Main
 async function main() {
-  const args = process.argv.slice(2);
-  const type = args[0];
-
-  if (!type || !["filter", "analyzer", "both"].includes(type)) {
-    console.log("Usage: node evaluator.js [filter|analyzer|both]");
-    process.exit(1);
-  }
-
-  console.log("\n🧪 Prompt Evaluator");
+  console.log("\n🧪 Filter Prompt Evaluator");
   console.log("=".repeat(60));
 
-  if (type === "filter" || type === "both") {
-    await evaluateFilter();
+  const testData = loadTestCases();
+  const testCases = testData.filter;
+
+  if (!testCases || testCases.length === 0) {
+    console.log("❌ No filter test cases found in test_cases.json");
+    return;
   }
 
-  if (type === "analyzer" || type === "both") {
-    await evaluateAnalyzer();
-  }
+  console.log(`   Test cases: ${testCases.length}`);
+
+  // Use real topic ID to check cached results
+  const topicId = "liveable-neighbourhoods";
+  const topicDescription = "liveable neighbourhoods, low traffic neighbourhoods, modal filters, liveable streets, traffic calming, or community opposition to these schemes";
+  
+  console.log(`   Using real topic ID: ${topicId} (checks cached results)`);
+
+  const results = await runFilterTests(testCases, topicId, topicDescription);
+  const metrics = evaluate(results);
+
+  displayResults(metrics, results);
 }
 
 main().catch(console.error);

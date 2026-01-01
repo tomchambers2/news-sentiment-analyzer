@@ -236,20 +236,23 @@ async function extractTitleFromPage(url) {
  * @param {boolean} extractTitles - Whether to extract titles from HTML (slower but enables filtering)
  */
 export async function discoverFromSitemap(site, extractTitles = false) {
-  console.log(`🗺️  Discovering articles from ${site} sitemap...`);
+  // Clean site name (remove protocol and trailing slash)
+  const cleanSite = site.replace(/^https?:\/\//, "").replace(/\/$/, "");
 
-  const config = SITEMAP_CONFIGS[site];
+  console.log(`🗺️  Discovering articles from ${cleanSite} sitemap...`);
+
+  const config = SITEMAP_CONFIGS[cleanSite];
 
   if (!config) {
-    console.log(`  ⚠️ No sitemap configuration for ${site}`);
+    console.log(`  ⚠️ No sitemap configuration for ${cleanSite}`);
     return [];
   }
 
   // Check cache first
   const cache = loadSitemapCache();
-  if (cache[site]) {
-    console.log(`  💾 Using cached sitemap URLs (${cache[site].length} articles)`);
-    return cache[site];
+  if (cache[cleanSite]) {
+    console.log(`  💾 Using cached sitemap URLs (${cache[cleanSite].length} articles)`);
+    return cache[cleanSite];
   }
 
   let allArticles = [];
@@ -293,11 +296,11 @@ export async function discoverFromSitemap(site, extractTitles = false) {
     ...article,
     title: article.title || "Untitled",
     snippet: article.snippet || "",
-    source: site,
+    source: cleanSite,
   }));
 
   // Save to cache
-  cache[site] = allArticles;
+  cache[cleanSite] = allArticles;
   saveSitemapCache(cache);
   console.log(`  💾 Cached ${allArticles.length} sitemap URLs`);
 
@@ -308,8 +311,8 @@ export async function discoverFromSitemap(site, extractTitles = false) {
  * Check if a site has sitemap support
  */
 export function hasSitemapSupport(site) {
-  // Remove protocol if present
-  const cleanSite = site.replace(/^https?:\/\//, "");
+  // Remove protocol and trailing slash if present
+  const cleanSite = site.replace(/^https?:\/\//, "").replace(/\/$/, "");
   return cleanSite in SITEMAP_CONFIGS;
 }
 

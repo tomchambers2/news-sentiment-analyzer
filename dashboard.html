@@ -503,7 +503,7 @@
   <body>
     <div class="container">
       <h1>🧱 Bristol News Sentiment Analysis</h1>
-      <p class="subtitle">Understanding coverage of liveable neighbourhoods</p>
+      <p class="subtitle">Understanding coverage</p>
 
       <div id="error" class="error" style="display: none"></div>
 
@@ -521,6 +521,11 @@
       </div>
 
       <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Total Scraped</div>
+          <div class="stat-value" id="totalScraped">-</div>
+          <div class="stat-subtext">Articles scraped</div>
+        </div>
         <div class="stat-card">
           <div class="stat-label">Total Articles</div>
           <div class="stat-value" id="totalArticles">-</div>
@@ -708,6 +713,11 @@
             <option value="stakeholders">By Stakeholders</option>
             <option value="political_parties">By Political Parties</option>
           </select>
+          <select id="trendTimePeriod" style="margin-left: 10px;">
+            <option value="monthly">Monthly</option>
+            <option value="quarterly" selected>Quarterly</option>
+            <option value="yearly">Yearly</option>
+          </select>
         </div>
         <div class="chart-container tall">
           <canvas id="sentimentTrendChart"></canvas>
@@ -740,6 +750,63 @@
         return months;
       }
 
+      // Helper function to get time period key from date string
+      function getTimePeriodKey(dateStr, period) {
+        if (!dateStr || dateStr === "unknown") return null;
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) return null;
+        
+        const year = date.getFullYear();
+        const month = date.getMonth() + 1;
+        
+        if (period === "yearly") {
+          return String(year);
+        } else if (period === "quarterly") {
+          const quarter = Math.floor((month - 1) / 3) + 1;
+          return `${year}-Q${quarter}`;
+        } else {
+          // monthly
+          return `${year}-${String(month).padStart(2, '0')}`;
+        }
+      }
+
+      // Helper function to generate all time periods between min and max
+      function getAllTimePeriodsBetween(minDate, maxDate, period) {
+        const periods = [];
+        let current = new Date(minDate);
+        const end = new Date(maxDate);
+        
+        if (period === "yearly") {
+          let year = current.getFullYear();
+          const endYear = end.getFullYear();
+          while (year <= endYear) {
+            periods.push(String(year));
+            year++;
+          }
+        } else if (period === "quarterly") {
+          while (current <= end) {
+            const year = current.getFullYear();
+            const month = current.getMonth() + 1; // getMonth() returns 0-11, so add 1
+            const quarter = Math.floor((month - 1) / 3) + 1;
+            const periodKey = `${year}-Q${quarter}`;
+            if (!periods.includes(periodKey)) {
+              periods.push(periodKey);
+            }
+            current.setMonth(current.getMonth() + 3);
+          }
+        } else {
+          // monthly
+          while (current <= end) {
+            const year = current.getFullYear();
+            const month = String(current.getMonth() + 1).padStart(2, '0');
+            periods.push(`${year}-${month}`);
+            current.setMonth(current.getMonth() + 1);
+          }
+        }
+        
+        return periods;
+      }
+
       // Load data
       async function loadData() {
         try {
@@ -751,7 +818,7 @@
             throw new Error("No data found in results.json");
           }
 
-          // Load text cache
+          // Load text cache (topic-specific, much smaller than full cache)
           try {
             const cacheResponse = await fetch("cache/3_scrape/article_text.json");
             if (cacheResponse.ok) {
@@ -759,7 +826,8 @@
               console.log(`Loaded ${Object.keys(textCache).length} cached article texts`);
             }
           } catch (err) {
-            console.log("Text cache not available");
+            console.error("❌ Text cache failed to load:", err.message);
+            alert("Warning: Text cache not available - 'View Full Text' will not work");
           }
 
           // Load filter reasoning
@@ -768,9 +836,12 @@
             if (filterResponse.ok) {
               filterReasoning = await filterResponse.json();
               console.log(`Loaded filter reasoning for ${Object.keys(filterReasoning).length} articles`);
+            } else {
+              throw new Error(`HTTP ${filterResponse.status}`);
             }
           } catch (err) {
-            console.log("Filter reasoning not available");
+            console.error("❌ Filter reasoning failed to load:", err.message);
+            alert("Warning: Filter reasoning not available - classification reasons will show as missing");
           }
 
           updateStats();
@@ -851,6 +922,11 @@
               ].substring(0, 7)}`
             : "Unknown";
 
+        // Display total scraped count (if available)
+        if (typeof TOTAL_SCRAPED !== 'undefined') {
+          document.getElementById("totalScraped").textContent = TOTAL_SCRAPED.toLocaleString();
+        }
+        
         document.getElementById("totalArticles").textContent = total;
         document.getElementById("supportivePercent").textContent =
           supportivePercent + "%";
@@ -888,6 +964,9 @@
         document
           .getElementById("trendFeatureSelect")
           .addEventListener("change", createSentimentTrendChart);
+        document
+          .getElementById("trendTimePeriod")
+          .addEventListener("change", createSentimentTrendChart);
       }
 
       function createSentimentChart() {
@@ -899,21 +978,30 @@
             (sentimentCounts[d.sentiment] || 0) + 1;
         });
 
+        // Color mapping for each sentiment
+        const sentimentColors = {
+          supportive: "#10b981", // green
+          negative: "#ef4444", // red
+          neutral: "#94a3b8", // gray
+          mixed: "#f59e0b", // orange
+        };
+
+        // Ensure consistent order: supportive, negative, neutral, mixed
+        const orderedSentiments = ["supportive", "negative", "neutral", "mixed"];
+        const labels = orderedSentiments.filter(s => sentimentCounts[s]);
+        const values = labels.map(s => sentimentCounts[s]);
+        const colors = labels.map(s => sentimentColors[s]);
+
         if (charts.sentiment) charts.sentiment.destroy();
 
         charts.sentiment = new Chart(ctx, {
           type: "doughnut",
           data: {
-            labels: Object.keys(sentimentCounts),
+            labels: labels,
             datasets: [
               {
-                data: Object.values(sentimentCounts),
-                backgroundColor: [
-                  "#10b981", // supportive - green
-                  "#ef4444", // negative - red
-                  "#94a3b8", // neutral - gray
-                  "#f59e0b", // mixed - orange
-                ],
+                data: values,
+                backgroundColor: colors,
               },
             ],
           },
@@ -1126,34 +1214,42 @@
 
       function createSentimentTrendChart() {
         const split = document.getElementById("trendFeatureSelect").value;
+        const timePeriod = document.getElementById("trendTimePeriod").value;
         const ctx = document.getElementById("sentimentTrendChart");
 
         if (split === "overall") {
-          const monthScores = {};
+          const periodScores = {};
 
           data.forEach((d) => {
             if (d.publication_date && d.publication_date !== "unknown") {
-              const month = d.publication_date.substring(0, 7);
+              const periodKey = getTimePeriodKey(d.publication_date, timePeriod);
               const score = parseInt(d.sentiment_score);
-              if (!isNaN(score)) {
-                if (!monthScores[month]) monthScores[month] = [];
-                monthScores[month].push(score);
+              if (periodKey && !isNaN(score)) {
+                if (!periodScores[periodKey]) periodScores[periodKey] = [];
+                periodScores[periodKey].push(score);
               }
             }
           });
 
-          const monthsWithData = Object.keys(monthScores).sort();
+          const periodsWithData = Object.keys(periodScores).sort();
           
-          // Generate all months between min and max
-          let allMonths = [];
-          if (monthsWithData.length > 0) {
-            const minMonth = monthsWithData[0];
-            const maxMonth = monthsWithData[monthsWithData.length - 1];
-            allMonths = getAllMonthsBetween(minMonth, maxMonth);
+          // Generate all periods between min and max
+          let allPeriods = [];
+          if (periodsWithData.length > 0) {
+            // Get min and max dates from the data
+            const dates = data
+              .map(d => d.publication_date)
+              .filter(d => d && d !== "unknown")
+              .sort();
+            if (dates.length > 0) {
+              const minDate = dates[0];
+              const maxDate = dates[dates.length - 1];
+              allPeriods = getAllTimePeriodsBetween(minDate, maxDate, timePeriod);
+            }
           }
           
-          const avgScores = allMonths.map((m) => {
-            const scores = monthScores[m];
+          const avgScores = allPeriods.map((p) => {
+            const scores = periodScores[p];
             return scores ? scores.reduce((a, b) => a + b, 0) / scores.length : null;
           });
 
@@ -1162,7 +1258,7 @@
           charts.sentimentTrend = new Chart(ctx, {
             type: "line",
             data: {
-              labels: allMonths,
+              labels: allPeriods,
               datasets: [
                 {
                   label: "Average Sentiment Score",
@@ -1188,39 +1284,42 @@
           });
         } else {
           // By feature
-          const featureMonthScores = {};
+          const featurePeriodScores = {};
 
           data.forEach((d) => {
             if (d.publication_date && d.publication_date !== "unknown") {
-              const month = d.publication_date.substring(0, 7);
+              const periodKey = getTimePeriodKey(d.publication_date, timePeriod);
               const values = getFeatureValues(d, split);
               const score = parseInt(d.sentiment_score);
 
-              if (!isNaN(score)) {
+              if (periodKey && !isNaN(score)) {
                 values.forEach((feature) => {
-                  if (!featureMonthScores[feature])
-                    featureMonthScores[feature] = {};
-                  if (!featureMonthScores[feature][month])
-                    featureMonthScores[feature][month] = [];
-                  featureMonthScores[feature][month].push(score);
+                  if (!featurePeriodScores[feature])
+                    featurePeriodScores[feature] = {};
+                  if (!featurePeriodScores[feature][periodKey])
+                    featurePeriodScores[feature][periodKey] = [];
+                  featurePeriodScores[feature][periodKey].push(score);
                 });
               }
             }
           });
 
-          // Get all unique months with data
-          const monthsWithData = new Set();
-          Object.values(featureMonthScores).forEach((months) => {
-            Object.keys(months).forEach((m) => monthsWithData.add(m));
+          // Get all unique periods with data
+          const periodsWithData = new Set();
+          Object.values(featurePeriodScores).forEach((periods) => {
+            Object.keys(periods).forEach((p) => periodsWithData.add(p));
           });
-          const sortedMonthsWithData = Array.from(monthsWithData).sort();
           
-          // Generate all months between min and max
-          let allMonths = [];
-          if (sortedMonthsWithData.length > 0) {
-            const minMonth = sortedMonthsWithData[0];
-            const maxMonth = sortedMonthsWithData[sortedMonthsWithData.length - 1];
-            allMonths = getAllMonthsBetween(minMonth, maxMonth);
+          // Generate all periods between min and max dates
+          let allPeriods = [];
+          const dates = data
+            .map(d => d.publication_date)
+            .filter(d => d && d !== "unknown")
+            .sort();
+          if (dates.length > 0) {
+            const minDate = dates[0];
+            const maxDate = dates[dates.length - 1];
+            allPeriods = getAllTimePeriodsBetween(minDate, maxDate, timePeriod);
           }
 
           // Create datasets
@@ -1234,13 +1333,13 @@
             "#06b6d4",
             "#84cc16",
           ];
-          const datasets = Object.keys(featureMonthScores)
+          const datasets = Object.keys(featurePeriodScores)
             .slice(0, 8)
             .map((feature, i) => {
               return {
                 label: feature,
-                data: allMonths.map((month) => {
-                  const scores = featureMonthScores[feature][month];
+                data: allPeriods.map((period) => {
+                  const scores = featurePeriodScores[feature][period];
                   return scores
                     ? scores.reduce((a, b) => a + b, 0) / scores.length
                     : null;
@@ -1257,7 +1356,7 @@
           charts.sentimentTrend = new Chart(ctx, {
             type: "line",
             data: {
-              labels: allMonths,
+              labels: allPeriods,
               datasets: datasets,
             },
             options: {
@@ -1382,9 +1481,9 @@
           const relevantEmoji = '✅';
           const sentimentEmoji = '💭'; // Consistent "explanation" emoji
           
-          const relevantReasoning = filterReasoning[article.url] && filterReasoning[article.url].reasoning 
-            ? filterReasoning[article.url].reasoning 
-            : 'Article is relevant to the topic';
+          // Filter cache key format is "url|||topicId"
+          const filterKey = `${article.url}|||${article.topic}`;
+          const relevantReasoning = filterReasoning[filterKey]?.reasoning || '⚠️ MISSING: No filter reasoning found';
           
           return `
           <div class="article-card">
@@ -1410,7 +1509,7 @@
             <div class="article-meta">
               <span class="article-meta-item">📰 ${article.publication}</span>
               <span class="article-meta-item">✍️ ${article.author}</span>
-              <span class="article-meta-item">📅 ${article.publication_date || 'unknown'}</span>
+              <span class="article-meta-item">📅 ${article.publication_date || '⚠️ NO DATE'}</span>
               <span class="article-meta-item">📍 ${article.geographic_focus}</span>
             </div>
             

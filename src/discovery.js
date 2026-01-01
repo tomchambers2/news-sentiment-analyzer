@@ -1,26 +1,10 @@
-import { getJson } from "serpapi";
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "fs";
 import {
   discoverFromSitemap,
   hasSitemapSupport,
 } from "./sitemap-discovery.js";
 
-const CACHE_FILE = "cache/1_discover/serp.json";
 const DISCOVERED_URLS_CACHE_FILE = "cache/1_discover/discover_output.json";
-
-// Load or initialize cache
-function loadCache() {
-  if (existsSync(CACHE_FILE)) {
-    return JSON.parse(readFileSync(CACHE_FILE, "utf-8"));
-  }
-  return {};
-}
-
-// Save cache to disk
-function saveCache(cache) {
-  mkdirSync("cache/1_discover", { recursive: true });
-  writeFileSync(CACHE_FILE, JSON.stringify(cache, null, 2));
-}
 
 // Load discovered URLs cache
 function loadDiscoveredUrlsCache() {
@@ -34,84 +18,6 @@ function loadDiscoveredUrlsCache() {
 function saveDiscoveredUrlsCache(cache) {
   mkdirSync("cache/1_discover", { recursive: true });
   writeFileSync(DISCOVERED_URLS_CACHE_FILE, JSON.stringify(cache, null, 2));
-}
-
-// Generate cache key from search parameters
-function getCacheKey(site, topic, start) {
-  return `${site}|${topic}|${start}`;
-}
-
-// Discover articles using SerpAPI (with caching)
-export async function discoverGoogleResults(site, topic) {
-  console.log(`🔍 Searching ${site} for "${topic}"...`);
-
-  const cache = loadCache();
-  let allArticles = [];
-  let start = 0;
-  const perPage = 100;
-  const maxPages = 1000; // TEST: limit to 1 page
-
-  while (true) {
-    const cacheKey = getCacheKey(site, topic, start);
-
-    // Check cache first
-    if (cache[cacheKey]) {
-      console.log(`  💾 Using cached results for page ${start / perPage + 1}`);
-      const articles = cache[cacheKey];
-      allArticles.push(...articles);
-      console.log(
-        `  Page ${start / perPage + 1}: ${articles.length} results (cached) (${
-          allArticles.length
-        } total)`,
-      );
-
-      if (articles.length < perPage) break;
-      if (start / perPage + 1 >= maxPages) break;
-      start += perPage;
-      continue;
-    }
-
-    // Not in cache - make API call
-    console.log(`  🌐 Fetching from SERP API...`);
-    const params = {
-      engine: "google",
-      q: `site:${site} ${topic}`,
-      api_key: process.env.SERPAPI_KEY,
-      num: perPage,
-      start: start,
-    };
-
-    const results = await getJson(params);
-    const articles = (results.organic_results || []).map((r) => ({
-      title: r.title,
-      link: r.link,
-      snippet: r.snippet,
-      source: site,
-    }));
-
-    // Save to cache
-    cache[cacheKey] = articles;
-    saveCache(cache);
-    console.log(`  💾 Cached ${articles.length} results`);
-
-    if (articles.length === 0) break;
-
-    allArticles.push(...articles);
-    console.log(
-      `  Page ${start / perPage + 1}: ${articles.length} results (${
-        allArticles.length
-      } total)`,
-    );
-
-    if (articles.length < perPage) break;
-    if (start / perPage + 1 >= maxPages) break;
-
-    start += perPage;
-    await new Promise((r) => setTimeout(r, 1000));
-  }
-
-  console.log(`  ✓ Found ${allArticles.length} total results`);
-  return allArticles;
 }
 
 // Discover articles from sitemap
@@ -129,7 +35,7 @@ export async function discoverSitemapResults(site) {
   }
 }
 
-// Combined discovery: sitemap + Google search, deduplicated by URL
+// Discover articles from a site's sitemap
 export async function discover(site, topic) {
   console.log(`\n🔍 Discovering articles from ${site}...`);
 
@@ -142,48 +48,20 @@ export async function discover(site, topic) {
     return discoveredCache[cacheKey];
   }
 
-  const allArticles = [];
-  const seenUrls = new Set();
-
-  // Try sitemap first (comprehensive historical data)
-  if (hasSitemapSupport(site)) {
-    console.log(`  📋 Using sitemap discovery...`);
-    const sitemapArticles = await discoverSitemapResults(site);
-
-    for (const article of sitemapArticles) {
-      if (!seenUrls.has(article.link)) {
-        seenUrls.add(article.link);
-        allArticles.push(article);
-      }
+  // Use sitemap discovery
+  if (!hasSitemapSupport(site)) {
+    console.log(`  ⚠️ No sitemap support for ${site}, skipping`);
+    return [];
     }
 
-    console.log(`  ✓ Sitemap: ${sitemapArticles.length} articles`);
-  } else {
-    console.log(`  ⚠️ No sitemap available, using Google search only`);
-  }
-
-  // Supplement with Google search (for recent articles or sites without sitemaps)
-  console.log(`  🔎 Supplementing with Google search...`);
-  const googleArticles = await discoverGoogleResults(site, topic);
-
-  let newFromGoogle = 0;
-  for (const article of googleArticles) {
-    if (!seenUrls.has(article.link)) {
-      seenUrls.add(article.link);
-      allArticles.push(article);
-      newFromGoogle++;
-    }
-  }
-
-  console.log(
-    `  ✓ Google: ${newFromGoogle} new articles (${googleArticles.length - newFromGoogle} duplicates)`,
-  );
-  console.log(`  📊 Total unique articles: ${allArticles.length}`);
+  console.log(`  📋 Using sitemap discovery...`);
+  const articles = await discoverSitemapResults(site);
+  console.log(`  ✓ Found ${articles.length} articles from sitemap`);
 
   // Save to discovered URLs cache
-  discoveredCache[cacheKey] = allArticles;
+  discoveredCache[cacheKey] = articles;
   saveDiscoveredUrlsCache(discoveredCache);
-  console.log(`  💾 Cached ${allArticles.length} discovered URLs`);
+  console.log(`  💾 Cached ${articles.length} discovered URLs`);
 
-  return allArticles;
+  return articles;
 }

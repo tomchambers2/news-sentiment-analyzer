@@ -1,11 +1,12 @@
 import "dotenv/config";
 import { writeFileSync, readFileSync, existsSync } from "fs";
 import { discover } from "./discovery.js";
-import { filter, filterBatch } from "./filter-fewshot.js";
+import { filterBatch } from "./filter-gpt.js";
 import { scrape } from "./scraper.js";
 import { analyze } from "./analyzer.js";
 import { generateDashboard } from "./generate-dashboard.js";
 import { generateIndex } from "./generate-index.js";
+import { getTopic, listTopics } from "./topics.js";
 
 const SITES = [
   "bristolpost.co.uk",
@@ -23,14 +24,20 @@ const SITES = [
   "https://thebristolian.net/",
 ];
 
-// Topic configuration: { id, description }
-// - id: Used for caching and file naming (never change once set)
-// - description: Used for classification (can be refined without breaking cache)
-const TOPIC = {
-  id: "liveable-neighbourhoods",
-  description:
-    "liveable neighbourhoods, low traffic neighbourhoods, modal filters, liveable streets, traffic calming, or community opposition to these schemes",
-};
+// Topic selection: REQUIRED command line argument
+// Usage: npm start cycling
+const TOPIC_ID = process.argv[2];
+
+if (!TOPIC_ID) {
+  console.error("\n❌ ERROR: Topic ID required\n");
+  console.log("Available topics:");
+  listTopics().forEach(t => console.log(`   ${t.id} - ${t.description}`));
+  console.log("\nUsage: npm start <topic-id>\n");
+  process.exit(1);
+}
+
+const TOPIC = getTopic(TOPIC_ID); // Throws if invalid
+console.log(`\n🎯 Topic: ${TOPIC.id} - ${TOPIC.description}\n`);
 
 // Limit articles per site for testing (set to null for unlimited)
 const MAX_ARTICLES_PER_SITE = null;
@@ -39,8 +46,8 @@ const MAX_ARTICLES_PER_SITE = null;
 const INITIAL_CONCURRENCY = 200;
 const MIN_CONCURRENCY = 10;
 
-// Batch size for classification (Jina supports up to 1024, testing 512)
-const CLASSIFICATION_BATCH_SIZE = 512;
+// Batch size for classification (GPT-4o-mini works best with smaller batches)
+const CLASSIFICATION_BATCH_SIZE = 100;
 
 /**
  * Adaptive concurrency controller with hysteresis to prevent flapping.
@@ -356,13 +363,53 @@ async function main() {
         }
       }
 
-      // Bristol Post: Only /news/ articles from 2020 onwards
+      // Bristol Post: Only /news/ articles from 2020 onwards, exclude low-relevance categories
       if (site === "bristolpost.co.uk") {
         // Check URL prefix
         if (!article.link.includes("/news/")) {
           console.log(
             `  ⏭️  Skipping Bristol Post non-news URL: ${article.link}`,
           );
+          return false;
+        }
+
+        // Exclude low-relevance subcategories (based on classification analysis)
+        // These categories have low relevance rates and mostly produce false positives
+        const excludedCategories = [
+          "/news/jobs/",           // 0% relevant - job listings
+          "/news/celebs-tv/",      // 0.46% - celebrity news, all false positives
+          "/news/health/",         // 0.39% - health articles
+          "/news/cost-of-living/", // 0.68% - finance/money articles  
+          "/news/real-life/",      // 0.62% - human interest stories
+          "/news/uk-world-news/",  // 1.19% - national/international news
+          "/news/history/",        // 3% but only 3 "relevant", all false positives
+          "/news/business/",       // 2.8% but only 2 "relevant", all false positives
+          "/news/property/",       // 1.45% - property listings, all 8 "relevant" are false positives
+        ];
+        
+        const excludedCategory = excludedCategories.find(cat => article.link.includes(cat));
+        if (excludedCategory) {
+          // Don't log each skip to reduce noise - these are expected exclusions
+          return false;
+        }
+
+        // Exclude articles with URL slugs that are never relevant
+        // (crime reports, lottery results, live updates, weather, etc.)
+        const excludedUrlPatterns = [
+          /stabb/i,           // stabbing/stabbed - 206 articles, 0 relevant
+          /murder/i,          // murder cases - 405 articles, 0 genuinely relevant
+          /lottery|euromillions|thunderball|lotto/i,  // lottery results - 122 articles, 0 relevant
+          /coronavirus|covid/i,  // pandemic news - 2,075 articles, 0 genuinely relevant
+          /\/live-/i,         // live updates - 1,562 articles, all FPs
+          /weather|forecast|rain(?!bow)|snow|storm|temperature|freeze|frost/i,  // weather - 1,381 articles
+          /hospital/i,        // hospital news - 538 articles, 0 genuinely relevant
+          /\bfire\b/i,        // fire incidents - 504 articles, 0 genuinely relevant
+          /jailed/i,          // court sentencing - 353 articles, 0 genuinely relevant
+          /funeral|tributes?-paid|tributes?-pour/i,  // death tributes - 239 articles, 0 relevant
+        ];
+        
+        const hasExcludedPattern = excludedUrlPatterns.some(pattern => pattern.test(article.link));
+        if (hasExcludedPattern) {
           return false;
         }
 
@@ -440,6 +487,7 @@ async function main() {
         url: article.link,
         title,
         text,
+        author: scrapeResult?.author || null,
         originalArticle: article,
         fromCache: scrapeResult?.fromCache || false,
       };
@@ -477,10 +525,12 @@ async function main() {
       ) {
         const batch = scrapedArticles.slice(i, i + CLASSIFICATION_BATCH_SIZE);
         console.log(
-          `🔍 Classifying batch ${
+          `\n🔍 Classifying batch ${
             Math.floor(i / CLASSIFICATION_BATCH_SIZE) + 1
-          } (${batch.length} articles)...`,
+          } (${batch.length} articles from ${batch[0]?.url?.match(/https?:\/\/[^/]+/)?.[0] || 'unknown'})...`,
         );
+        // Show URLs being classified
+        batch.forEach((a, idx) => console.log(`  [${i + idx + 1}] ${a.url}`));
 
         try {
           const batchInput = batch.map((a) => ({
@@ -492,7 +542,7 @@ async function main() {
           const classificationResults = await filterBatch(
             batchInput,
             TOPIC.id,
-            TOPIC.description,
+            TOPIC.prompt,
           );
 
           // Process results
@@ -553,7 +603,7 @@ async function main() {
 
         for (const article of relevantArticles) {
           console.log(`🧠 Analyzing: ${article.url}`);
-          const analysis = await analyze(site, article.text, article.title);
+          const analysis = await analyze(site, article.text, article.title, TOPIC.id, article.author);
 
           if (!analysis) {
             console.log(`  ❌ Analysis failed, skipping`);
@@ -573,6 +623,8 @@ async function main() {
             topic: TOPIC.id,
             topic_description: TOPIC.description,
             ...analysis,
+            // Normalize publication to match source for consistency
+            publication: site.replace(/^https?:\/\//, '').replace(/\/$/, ''),
           };
 
           results.push(entry);

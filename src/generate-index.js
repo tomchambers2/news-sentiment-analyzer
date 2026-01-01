@@ -1,4 +1,4 @@
-import { readdirSync, existsSync, readFileSync, writeFileSync } from "fs";
+import { readdirSync, existsSync, readFileSync, writeFileSync, statSync } from "fs";
 
 /**
  * Generate an index page listing all topic dashboards
@@ -32,7 +32,7 @@ export function generateIndex() {
       }
 
       // Get file modification time
-      const stats = require("fs").statSync(filename);
+      const stats = statSync(filename);
       lastUpdated = stats.mtime.toLocaleDateString();
     } catch (err) {
       console.warn(`⚠️  Could not read ${filename}`);

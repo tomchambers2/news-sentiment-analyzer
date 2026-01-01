@@ -86,20 +86,31 @@ Content: ${excerpt}
       })
       .join("\n---\n");
 
-    const prompt = `You are classifying news articles to determine if they are relevant to: "${topicDescription}".
+    const prompt = `Classify if each article is SPECIFICALLY about Low Traffic Neighbourhood (LTN) schemes or policies.
 
-Articles that ARE relevant include:
-- Policy announcements about low traffic neighbourhoods, modal filters, or liveable streets
-- Community responses, protests, or debates about these traffic schemes
-- Implementation details of traffic calming measures
-- Local government decisions on transport policy related to these schemes
+RELEVANT - Article must be PRIMARILY about one of these:
+- LTN schemes, modal filters, traffic filters, road closures for traffic reduction
+- Liveable/low traffic neighbourhood policy announcements, consultations, implementations
+- Community protests/support FOR or AGAINST LTN schemes specifically
+- 20mph zone policies, school streets schemes, pedestrianisation projects
+- Cycle lane infrastructure projects and policy debates
+- Council transport policy decisions about reducing car traffic
 
-Articles that are NOT relevant include:
-- General traffic accidents or motorway closures (M5, M4, etc.)
-- School news or ratings
-- Entertainment, celebrity, lifestyle, cooking, or cleaning articles
-- Sports news
-- General crime or human interest stories
+NOT RELEVANT - Reject these even if they mention traffic/roads:
+- Traffic accidents, crashes, road closures due to incidents
+- General roadworks, motorway news (M4, M5, M32)
+- Celebrity news, TV shows, entertainment
+- Property listings, house prices, real estate
+- Health, medical, lifestyle, cooking, cleaning tips
+- Crime reports, court cases, police incidents
+- Weather, travel disruption from weather
+- Bus route changes, train delays, airport news
+- School ratings, Ofsted reports, education news
+- Job listings, career advice
+- Human interest stories that mention "traffic" incidentally
+- Council bollards blocking driveways (unless part of LTN scheme)
+
+The article must be ABOUT the policy/scheme itself, not just mention traffic in passing.
 
 For each article below, respond with ONLY a JSON array. Each element should be:
 {"relevant": true/false, "confidence": 0.0-1.0, "reasoning": "brief explanation"}

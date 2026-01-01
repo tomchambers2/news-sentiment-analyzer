@@ -6,7 +6,8 @@
   "main": "src/main.js",
   "scripts": {
     "start": "node src/main.js",
-    "serve": "npx http-server -p 8000 -o dashboard.html",
+    "serve": "npx http-server -p 8000 -o index.html",
+    "dashboard": "node regenerate-dashboard.js",
     "label": "node prompt-optimizer/labeler.js",
     "eval-filter": "node prompt-optimizer/evaluator.js filter",
     "eval-analyzer": "node prompt-optimizer/evaluator.js analyzer",

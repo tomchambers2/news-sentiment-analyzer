@@ -1,0 +1,285 @@
+{
+  "filter": [
+    {
+      "id": "f1",
+      "url": "https://www.bristolpost.co.uk/news/bristol-news/parking-charges-coming-downs-under-10581169",
+      "title": "Parking charges coming to the Downs under Bristol City Council budget plans",
+      "expected": false,
+      "reason": "Parking charges at a park - NOT about LTN/modal filters"
+    },
+    {
+      "id": "f2",
+      "url": "https://www.bristolpost.co.uk/news/motoring/first-uk-suv-parking-tax-10578990",
+      "title": "First UK 'SUV' parking tax on all cars weighing over this amount",
+      "expected": false,
+      "reason": "SUV parking tax in Cardiff - NOT LTN"
+    },
+    {
+      "id": "f3",
+      "url": "https://www.bristolpost.co.uk/news/local-news/star-garter-landlord-hits-back-3717201",
+      "title": "Star and Garter landlord responds to residents' concerns about noise and traffic at events",
+      "expected": false,
+      "reason": "Pub noise complaints - NOT LTN"
+    },
+    {
+      "id": "f4",
+      "url": "https://www.bristolpost.co.uk/news/bristol-news/clean-air-zone-bristol-given-4064341",
+      "title": "Clean air zone for Bristol given go-ahead - but diesel ban uncertain",
+      "expected": false,
+      "reason": "Clean Air Zone is separate policy from LTN"
+    },
+    {
+      "id": "f5",
+      "url": "https://www.bristolpost.co.uk/news/local-news/bath-congestion-zone-charge-clean-3814200",
+      "title": "Drivers entering Bath could have to pay congestion charge - on top of clean air zone bill",
+      "expected": false,
+      "reason": "Congestion charge - NOT LTN"
+    },
+    {
+      "id": "f6",
+      "url": "https://www.bristolpost.co.uk/news/bristol-news/bristol-traffic-protest-first-bus-3741342",
+      "title": "Protest this Saturday will call on Bristol to 'Take Back Our Buses'",
+      "expected": false,
+      "reason": "Bus service protest - NOT LTN"
+    },
+    {
+      "id": "f7",
+      "url": "https://www.bristolpost.co.uk/news/local-news/council-due-refund-thousands-after-3773096",
+      "title": "Council due refund of thousands after discovering CCTV bill paid twice",
+      "expected": false,
+      "reason": "Council finances - NOT LTN"
+    },
+    {
+      "id": "f8",
+      "url": "https://www.bristolpost.co.uk/news/bristol-news/clevedon-flats-kenn-road-planning-3772990",
+      "title": "A 'monstrosity' - Clevedon flats plan likened to extension to Dartmoor Prison",
+      "expected": false,
+      "reason": "Housing development - NOT LTN"
+    },
+    {
+      "id": "f9",
+      "url": "https://www.bristolpost.co.uk/news/bristol-news/cars-banned-outside-two-bristol-3815045",
+      "title": "Cars to be banned outside two Bristol schools for 18 months",
+      "expected": true,
+      "reason": "School streets scheme - IS LTN related"
+    },
+    {
+      "id": "f10",
+      "url": "https://www.bristolpost.co.uk/news/bristol-news/plans-pedestrianise-old-city-take-3864235",
+      "title": "Plans to pedestrianise the Old City take a step forward",
+      "expected": true,
+      "reason": "Pedestrianisation - IS LTN related"
+    },
+    {
+      "id": "f11",
+      "url": "https://www.bristolpost.co.uk/news/bristol-news/new-20mph-zones-southville-harry-3810977",
+      "title": "New 20mph zones in Southville, Harry Stoke and Keynsham",
+      "expected": true,
+      "reason": "20mph zones as part of traffic calming - IS LTN related"
+    },
+    {
+      "id": "f12",
+      "url": "https://www.bristolpost.co.uk/news/bristol-news/east-bristol-ltn-rollout-problems-10475689",
+      "title": "East Bristol LTN rollout problems",
+      "expected": true,
+      "reason": "Explicitly about LTN scheme"
+    },
+    {
+      "id": "f13",
+      "url": "https://www.bristolpost.co.uk/news/bristol-news/bollards-could-block-drivers-bristol-10475735",
+      "title": "Bollards could block drivers in Bristol",
+      "expected": true,
+      "reason": "Modal filters/bollards - IS LTN"
+    },
+    {
+      "id": "f14",
+      "url": "https://www.bristolpost.co.uk/news/bristol-news/nine-proposed-new-metrobus-routes-3787139",
+      "title": "The nine proposed new metrobus routes include a service to Bristol Airport",
+      "expected": false,
+      "reason": "Metrobus routes - NOT LTN"
+    },
+    {
+      "id": "f15",
+      "url": "https://www.bristolpost.co.uk/news/bristol-news/more-plans-revealed-huge-temple-3787593",
+      "title": "More plans revealed for huge Temple Island redevelopment",
+      "expected": false,
+      "reason": "Property development - NOT LTN"
+    },
+    {
+      "id": "f16",
+      "url": "https://www.bristolpost.co.uk/news/bristol-news/extinction-rebellion-bristol-write-open-3785407",
+      "title": "Extinction Rebellion Bristol write open letter to Mayor Marvin Rees",
+      "expected": false,
+      "reason": "Environmental protest not specifically about LTN"
+    },
+    {
+      "id": "f17",
+      "url": "https://www.bristolpost.co.uk/news/bristol-news/bus-cycle-lanes-set-a4018-3803517",
+      "title": "Bus and cycle lanes set for A4018 after £3.4m boost",
+      "expected": false,
+      "reason": "Cycle lane on main road - NOT LTN (separate infrastructure)"
+    },
+    {
+      "id": "f18",
+      "url": "https://www.bristolpost.co.uk/news/bristol-news/cumberland-road-closed-city-council-3905398",
+      "title": "Six knock-on effects of the closure of Cumberland Road",
+      "expected": true,
+      "reason": "Road closure effects - likely LTN related if about traffic reduction"
+    },
+    {
+      "id": "f19",
+      "url": "https://www.bristolpost.co.uk/news/bristol-news/bristol-greens-deny-being-anti-10577529",
+      "title": "Bristol Greens deny being 'anti-car' and pledge better buses and fewer potholes",
+      "expected": false,
+      "reason": "General party politics - NOT specifically LTN"
+    },
+    {
+      "id": "f20",
+      "url": "https://www.bristolpost.co.uk/news/local-news/clevedon-weston-cycle-path-pier-3723580",
+      "title": "£2M cycleway linking Clevedon and Weston-super-Mare given the go-ahead",
+      "expected": false,
+      "reason": "Inter-city cycleway - NOT LTN (different type of infrastructure)"
+    },
+    {
+      "id": "f21",
+      "url": "https://www.bristolpost.co.uk/news/bristol-news/transport-changes-south-bristol-could-4918402",
+      "title": "Transport changes in South Bristol could include one-way system and new cycle lanes",
+      "expected": false,
+      "reason": "General transport changes - NOT specifically LTN"
+    },
+    {
+      "id": "f22",
+      "url": "https://www.bristolpost.co.uk/news/bristol-news/traffic-free-thornbury-high-street-4789889",
+      "title": "Traffic-free Thornbury High Street would be 'final nail in coffin' for businesses",
+      "expected": true,
+      "reason": "Pedestrianisation debate - IS LTN related"
+    },
+    {
+      "id": "f23",
+      "url": "https://www.bristolpost.co.uk/news/bristol-news/bristol-clean-air-zone-charges-4584686",
+      "title": "Bristol clean air zone: Decision on charges expected 'before Christmas'",
+      "expected": false,
+      "reason": "Clean Air Zone - NOT LTN"
+    },
+    {
+      "id": "f24",
+      "url": "https://www.bristolpost.co.uk/news/bristol-news/council-ban-cars-streets-outside-5378891",
+      "title": "Council to ban cars from streets outside two Bristol schools during peak times",
+      "expected": true,
+      "reason": "School streets - IS LTN related"
+    },
+    {
+      "id": "f25",
+      "url": "https://www.bristolpost.co.uk/news/bristol-news/thornbury-high-street-changes-adopted-5504681",
+      "title": "Thornbury High Street changes adopted despite wave of public opposition",
+      "expected": true,
+      "reason": "Pedestrianisation scheme - IS LTN related"
+    },
+    {
+      "id": "f26",
+      "url": "https://www.bristolpost.co.uk/news/bristol-news/children-protest-demand-drivers-turn-6191657",
+      "title": "Children protest to demand drivers turn off their engines outside school",
+      "expected": false,
+      "reason": "Anti-idling campaign - NOT LTN (different issue)"
+    },
+    {
+      "id": "f27",
+      "url": "https://www.bristolpost.co.uk/news/bristol-news/yatton-high-street-20mph-limit-5431310",
+      "title": "Yatton High Street: 20mph limit among safety ideas after 'near misses'",
+      "expected": true,
+      "reason": "20mph zone for traffic calming - IS LTN related"
+    },
+    {
+      "id": "f28",
+      "url": "https://www.bristolpost.co.uk/news/bristol-news/clifton-protesters-against-pedestrianisation-block-5501515",
+      "title": "Clifton protesters against pedestrianisation block traffic with coffin",
+      "expected": true,
+      "reason": "Protest about pedestrianisation - IS LTN related"
+    },
+    {
+      "id": "f29",
+      "url": "https://www.bristolpost.co.uk/news/bristol-news/thousands-expected-attend-massive-climate-6088972",
+      "title": "Extinction Rebellion Bristol protest: Thousands expected to attend 'massive' demonstration",
+      "expected": false,
+      "reason": "Climate protest - NOT specifically LTN"
+    },
+    {
+      "id": "f30",
+      "url": "https://www.bristolpost.co.uk/news/bristol-news/plans-close-park-street-private-6090807",
+      "title": "Plans to close Park Street to private cars and introduce free buses",
+      "expected": true,
+      "reason": "Closing street to cars - IS LTN related"
+    },
+    {
+      "id": "f31",
+      "url": "https://www.bristolpost.co.uk/news/bristol-news/closing-college-green-cars-enhance-6548698",
+      "title": "Closing College Green to cars will 'enhance high street' says Sustrans",
+      "expected": true,
+      "reason": "Car restriction on street - IS LTN related"
+    },
+    {
+      "id": "f32",
+      "url": "https://www.bristolpost.co.uk/news/bristol-news/exclusive-bristol-bridge-closure-results-5656948",
+      "title": "EXCLUSIVE: Bristol Bridge closure results in 81,000 fines being issued in nine months",
+      "expected": true,
+      "reason": "Modal filter enforcement - IS LTN related"
+    },
+    {
+      "id": "f33",
+      "url": "https://www.bristolpost.co.uk/news/bristol-news/south-gloucestershire-council-responds-confusion-5012661",
+      "title": "South Gloucestershire Council responds to confusion about registering COVID home testing kits",
+      "expected": false,
+      "reason": "COVID testing - NOT LTN"
+    },
+    {
+      "id": "f34",
+      "url": "https://www.bristolpost.co.uk/news/bristol-news/marvin-rees-full-speech-tonights-6090637",
+      "title": "Marvin Rees' full speech from tonight's State of the City",
+      "expected": false,
+      "reason": "General political speech - NOT specifically LTN"
+    },
+    {
+      "id": "f35",
+      "url": "https://www.bristolpost.co.uk/news/bristol-news/local-elections-candidates-clash-over-5332940",
+      "title": "Local elections: Candidates clash over getting people to ditch cars",
+      "expected": false,
+      "reason": "Election debate on transport - NOT specifically LTN"
+    },
+    {
+      "id": "f36",
+      "url": "https://www.bristolpost.co.uk/news/bristol-news/kill-bill-protest-hundreds-gather-5235279",
+      "title": "Kill the Bill protest: Hundreds gather outside Bridewell Police Station",
+      "expected": false,
+      "reason": "Protest about policing bill - NOT LTN"
+    },
+    {
+      "id": "f37",
+      "url": "https://www.bristolpost.co.uk/news/bristol-news/what-life-like-bristols-cotham-5644105",
+      "title": "What life is like on Bristol's Cotham Hill since it closed to cars",
+      "expected": true,
+      "reason": "Road closed to cars - IS LTN related"
+    },
+    {
+      "id": "f38",
+      "url": "https://www.bristolpost.co.uk/news/bristol-news/council-close-key-route-evict-5809203",
+      "title": "Council to close key route to evict van-dwellers and build new homes",
+      "expected": false,
+      "reason": "Road closure for eviction/housing - NOT LTN"
+    },
+    {
+      "id": "f39",
+      "url": "https://www.bristolpost.co.uk/news/bristol-news/hundreds-sign-petition-demand-bristol-4481194",
+      "title": "Hundreds sign petition to demand Bristol Bridge traffic closure is reversed",
+      "expected": true,
+      "reason": "Protest about modal filter - IS LTN related"
+    },
+    {
+      "id": "f40",
+      "url": "https://www.bristolpost.co.uk/news/bristol-news/thornbury-high-street-pedestrianisation-consultation-4956076",
+      "title": "Thornbury High Street pedestrianisation consultation extended by a week after error",
+      "expected": true,
+      "reason": "Pedestrianisation consultation - IS LTN related"
+    }
+  ],
+  "analyzer": []
+}

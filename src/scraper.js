@@ -29,10 +29,14 @@ async function scrapeWithJina(url) {
 
   // Jina AI returns JSON with structured data
   if (response.data && response.data.data) {
-    const { content, title } = response.data.data;
+    const { content, title, metadata } = response.data.data;
     // Combine title and content for full article text
     const fullText = title ? `${title}\n\n${content}` : content;
-    return fullText.replace(/\s+/g, " ").trim();
+    const author = metadata?.author || null;
+    return {
+      text: fullText.replace(/\s+/g, " ").trim(),
+      author: author
+    };
   }
 
   throw new Error("Invalid response from Jina AI Reader API");
@@ -41,7 +45,7 @@ async function scrapeWithJina(url) {
 /**
  * Scrape article text using Jina AI Reader API
  * @param {string} url - URL to scrape
- * @returns {Promise<{text: string, fromCache: boolean}|null>} - Scraped text content or null on failure
+ * @returns {Promise<{text: string, author: string|null, fromCache: boolean}|null>} - Scraped text content and author or null on failure
  */
 export async function scrape(url) {
   // Check cache first (instant SQLite lookup)
@@ -51,7 +55,7 @@ export async function scrape(url) {
   }
 
   try {
-    const text = await scrapeWithJina(url);
+    const { text, author } = await scrapeWithJina(url);
 
     // Cache the scraped text
     saveArticle(url, text);
@@ -59,7 +63,7 @@ export async function scrape(url) {
     // Clear failure record on success
     deleteFailure(url);
 
-    return { text, fromCache: false };
+    return { text, author, fromCache: false };
   } catch (err) {
     // Log the full error for debugging
     const errorMessage = err.response?.data
