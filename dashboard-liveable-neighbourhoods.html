@@ -834,16 +834,16 @@
 
           // Load filter reasoning
           try {
-            const filterResponse = await fetch("cache/2_filter/filter_output.json");
+            const filterResponse = await fetch("filter-reasoning-liveable-neighbourhoods.json");
             if (filterResponse.ok) {
               filterReasoning = await filterResponse.json();
-              console.log(`Loaded filter reasoning for ${Object.keys(filterReasoning).length} articles`);
+              console.log(`✓ Loaded filter reasoning for ${Object.keys(filterReasoning).length} articles`);
             } else {
               throw new Error(`HTTP ${filterResponse.status}`);
             }
           } catch (err) {
             console.error("❌ Filter reasoning failed to load:", err.message);
-            alert("Warning: Filter reasoning not available - classification reasons will show as missing");
+            console.warn("Classification reasons will not be available in article details");
           }
 
           updateStats();
@@ -1483,9 +1483,8 @@
           const relevantEmoji = '✅';
           const sentimentEmoji = '💭'; // Consistent "explanation" emoji
           
-          // Filter cache key format is "url|||topicId"
-          const filterKey = `${article.url}|||${article.topic}`;
-          const relevantReasoning = filterReasoning[filterKey]?.reasoning || '⚠️ MISSING: No filter reasoning found';
+          // Filter reasoning keyed by URL
+          const relevantReasoning = filterReasoning[article.url]?.reasoning || '⚠️ MISSING: No filter reasoning found';
           
           return `
           <div class="article-card">
