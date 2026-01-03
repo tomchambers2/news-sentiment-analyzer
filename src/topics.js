@@ -91,24 +91,31 @@ ACCEPT if the main topic is:
 
 Each article: check if it mentions recycling/motorbike/upcycling - if yes, mark NOT relevant.
 Only mark relevant if pedal cycling is the MAIN topic.`,
-    analyzerPrompt: `Analyze this article's stance toward CYCLING and CYCLISTS.
+    analyzerPrompt: `Analyze this article's tone toward CYCLISTS as people/community.
 
-SENTIMENT DEFINITIONS:
-- "supportive" = Pro-cycling: promotes cycling infrastructure, celebrates cyclists, advocates for cyclist safety
-- "negative" = Anti-cycling: criticizes cyclists, opposes bike lanes, highlights cycling problems
-- "neutral" = Factual reporting with NO clear stance (announcements, incident reports)
-- "mixed" = Gives SIGNIFICANT coverage to BOTH pro and anti-cycling views
+SENTIMENT = How article treats cyclists (sympathy vs hostility):
+- "supportive" = Sympathetic to cyclists, portrays them positively, advocates for their safety/rights
+- "negative" = Hostile to cyclists, portrays them as problem/nuisance, blames them
+- "neutral" = Factual reporting with no clear sympathy or hostility
+- "mixed" = Shows BOTH sympathy and hostility
 
-FOCUS ON:
-- Is the article positive or negative about cycling as transport?
-- Does it support or oppose cycling infrastructure?
-- How are cyclists portrayed (heroes, victims, nuisances)?
+CRITICAL EXAMPLES:
+✅ "Cyclist killed - family devastated, calls for safer roads" = SUPPORTIVE (sympathetic)
+✅ "Cyclist dies after dangerous driver hit-and-run" = SUPPORTIVE (cyclist as victim)
+❌ "Reckless cyclist ignores red light, dies in crash" = NEGATIVE (blames cyclist)
+❌ "Yet another cyclist causes traffic chaos" = NEGATIVE (hostile toward cyclists)
+⚪ "Cyclist injured in collision at Queen's Road" = NEUTRAL (just facts)
+
+FOCUS: Is the article sympathetic, hostile, or neutral toward cyclists?
+- NOT whether the news itself is good/bad
+- NOT just about infrastructure policy
+- About how CYCLISTS are portrayed and treated
 
 Respond in JSON:
 {
   "sentiment": "supportive" | "negative" | "neutral" | "mixed",
-  "sentiment_score": 1-10 (1=very anti-cycling, 10=very pro-cycling),
-  "sentiment_explanation": "What the article says about cycling/cyclists",
+  "sentiment_score": 1-10 (1=very hostile to cyclists, 10=very sympathetic to cyclists),
+  "sentiment_explanation": "How article treats/portrays cyclists",
   "main_angle": "safety" | "infrastructure" | "events" | "crime" | "health" | "environment" | "conflict" | "community",
   "framing": "progress" | "problem" | "celebration" | "human_interest" | "policy" | "conflict" | "warning",
   "evidence_type": "data" | "expert_opinion" | "personal_stories" | "official_statements" | "mixed" | "none",
