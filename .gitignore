@@ -5,3 +5,4 @@ cache/
 text-cache-*.json
 results-*.json
 test-new-prompt.js
+*.zip
