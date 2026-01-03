@@ -3,6 +3,5 @@ node_modules
 cache
 cache/
 text-cache-*.json
-results-*.json
 test-new-prompt.js
 *.zip
