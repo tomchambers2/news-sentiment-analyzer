@@ -2,3 +2,6 @@ node_modules
 .env
 cache
 cache/
+text-cache-*.json
+results-*.json
+test-new-prompt.js
