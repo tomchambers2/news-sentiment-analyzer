@@ -774,6 +774,96 @@
         console.log(`✏️ Updated title to: ${config.title}`);
       }
 
+      // Dynamically populate feature dropdowns based on what fields exist in data
+      function populateFeatureDropdowns() {
+        if (!data || data.length === 0) return;
+        
+        // Get all available fields from sample of data
+        const availableFields = new Set();
+        const sampleSize = Math.min(10, data.length);
+        
+        // Check multiple items to see what fields have non-null values
+        for (let i = 0; i < sampleSize; i++) {
+          const item = data[i];
+          Object.keys(item).forEach(key => {
+            // Check if field has any non-null values
+            if (item[key] !== null && item[key] !== undefined) {
+              availableFields.add(key);
+            }
+          });
+        }
+        
+        // Define all possible feature options with display names
+        const allFeatureOptions = [
+          { value: 'main_angle', label: 'Main Angle' },
+          { value: 'article_type', label: 'Article Type' },
+          { value: 'framing', label: 'Framing' },
+          { value: 'evidence_type', label: 'Evidence Type' },
+          { value: 'balance', label: 'Balance' },
+          { value: 'article_length', label: 'Article Length' },
+          { value: 'geographic_focus', label: 'Geographic Focus' },
+          { value: 'policy_mention', label: 'Policy Mention' },
+          { value: 'opposition_mentioned', label: 'Opposition Mentioned' },
+          { value: 'support_mentioned', label: 'Support Mentioned' },
+          { value: 'data_driven', label: 'Data Driven' },
+          { value: 'sentiment', label: 'Sentiment' },
+          { value: 'publication_date', label: 'Publication Date' },
+          { value: 'topic', label: 'Topic' },
+          { value: 'publication', label: 'Publication' },
+          { value: 'author', label: 'Author (top 10)' },
+          { value: 'secondary_angles', label: 'Secondary Angles' },
+          { value: 'primary_voices', label: 'Primary Voices' },
+          { value: 'stakeholders', label: 'Stakeholders' },
+          { value: 'political_parties', label: 'Political Parties' },
+        ];
+        
+        // Filter to only available features
+        const availableOptions = allFeatureOptions.filter(opt => 
+          availableFields.has(opt.value)
+        );
+        
+        // Update all three feature dropdowns
+        const dropdownIds = ['featureSelect', 'sentimentFeatureSelect', 'trendFeatureSelect'];
+        
+        dropdownIds.forEach(dropdownId => {
+          const dropdown = document.getElementById(dropdownId);
+          if (!dropdown) return;
+          
+          const currentValue = dropdown.value;
+          
+          // For trend dropdown, keep "Overall Average" option
+          if (dropdownId === 'trendFeatureSelect') {
+            dropdown.innerHTML = '<option value="overall">Overall Average</option>';
+            // Add available features with "By" prefix
+            availableOptions.forEach(opt => {
+              const option = document.createElement('option');
+              option.value = opt.value;
+              option.textContent = 'By ' + opt.label;
+              dropdown.appendChild(option);
+            });
+          } else {
+            // Regular feature dropdowns
+            dropdown.innerHTML = '';
+            availableOptions.forEach(opt => {
+              const option = document.createElement('option');
+              option.value = opt.value;
+              option.textContent = opt.label;
+              dropdown.appendChild(option);
+            });
+          }
+          
+          // Restore previous selection if still available, otherwise select first
+          if (currentValue === 'overall' || availableOptions.find(opt => opt.value === currentValue)) {
+            dropdown.value = currentValue;
+          } else if (dropdown.options.length > 0) {
+            dropdown.value = dropdown.options[0].value;
+          }
+        });
+        
+        console.log(`✅ Populated ${dropdownIds.length} dropdowns with ${availableOptions.length} available features`);
+        console.log(`   Available: ${availableOptions.map(o => o.value).join(', ')}`);
+      }
+      
       // Helper function to generate all months between min and max dates
       function getAllMonthsBetween(minMonth, maxMonth) {
         const months = [];
@@ -884,6 +974,9 @@
             console.log("   Filter explanations will show as missing");
           }
 
+          // Dynamically populate dropdowns based on available fields
+          populateFeatureDropdowns();
+          
           updateStats();
           createCharts();
         } catch (error) {
@@ -1468,19 +1561,38 @@
 
       // Article Browser Functions
       function populateFilters() {
-        // Get unique values for each filter
-        const publications = [...new Set(data.map(d => d.publication))].sort();
-        const authors = [...new Set(data.map(d => d.author))].filter(a => a !== 'unknown').sort();
-        const angles = [...new Set(data.map(d => d.main_angle))].sort();
-        const types = [...new Set(data.map(d => d.article_type))].sort();
-        const balances = [...new Set(data.map(d => d.balance))].sort();
-
-        // Populate dropdowns
-        populateSelect('filterPublication', publications);
-        populateSelect('filterAuthor', authors);
-        populateSelect('filterAngle', angles);
-        populateSelect('filterType', types);
-        populateSelect('filterBalance', balances);
+        // Check which fields actually exist in the data
+        const hasField = (fieldName) => {
+          return data.some(item => item[fieldName] !== null && item[fieldName] !== undefined);
+        };
+        
+        // Get unique values for each filter (only if field exists)
+        const filterConfig = [
+          { id: 'filterPublication', field: 'publication', label: 'Publication' },
+          { id: 'filterAuthor', field: 'author', label: 'Author' },
+          { id: 'filterAngle', field: 'main_angle', label: 'Main Angle' },
+          { id: 'filterType', field: 'article_type', label: 'Article Type' },
+          { id: 'filterBalance', field: 'balance', label: 'Balance' },
+        ];
+        
+        filterConfig.forEach(config => {
+          const filterGroup = document.getElementById(config.id).closest('.filter-group');
+          
+          if (hasField(config.field)) {
+            // Field exists - populate it
+            let values = [...new Set(data.map(d => d[config.field]))].sort();
+            // Filter out unknown for author field
+            if (config.field === 'author') {
+              values = values.filter(a => a !== 'unknown');
+            }
+            populateSelect(config.id, values);
+            filterGroup.style.display = '';
+          } else {
+            // Field doesn't exist - hide the filter group
+            filterGroup.style.display = 'none';
+            console.log(`ℹ️ Hidden filter: ${config.label} (field '${config.field}' not in data)`);
+          }
+        });
 
         // Initial display
         filterArticles();
