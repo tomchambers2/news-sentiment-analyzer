@@ -1177,10 +1177,11 @@
                     if (label) {
                       label += ': ';
                     }
+                    const value = context.chart.options.indexAxis === 'y' ? context.parsed.x : context.parsed.y;
                     if (displayMode === "percentage") {
-                      label += context.parsed.y.toFixed(1) + '%';
+                      label += value.toFixed(1) + '%';
                     } else {
-                      label += context.parsed.y;
+                      label += value;
                     }
                     return label;
                   }
@@ -1191,14 +1192,26 @@
               x: {
                 stacked: true,
                 beginAtZero: true,
-                max: displayMode === "percentage" ? 100 : undefined,
-                ticks: {
-                  callback: function(value) {
-                    return displayMode === "percentage" ? value + '%' : value;
+                ...(labels.length > 8 ? {
+                  max: displayMode === "percentage" ? 100 : undefined,
+                  ticks: {
+                    callback: function(value) {
+                      return displayMode === "percentage" ? value + '%' : value;
+                    }
                   }
-                }
+                } : {})
               },
-              y: { stacked: true },
+              y: { 
+                stacked: true,
+                ...(labels.length <= 8 ? {
+                  max: displayMode === "percentage" ? 100 : undefined,
+                  ticks: {
+                    callback: function(value) {
+                      return displayMode === "percentage" ? value + '%' : value;
+                    }
+                  }
+                } : {})
+              },
             },
           },
         });
