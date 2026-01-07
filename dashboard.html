@@ -750,6 +750,7 @@
       const resultsFile = topicId ? `results-${topicId}.json` : 'results.json';
       const textCacheFile = topicId ? `text-cache-${topicId}.json` : 'cache/3_scrape/article_text.json';
       const filterReasoningFile = 'cache/2_filter/filter_output.json';
+      const metadataFile = topicId ? `metadata-${topicId}.json` : null;
       
       console.log(`📊 Dashboard topic: ${topicId || 'default'}`);
       console.log(`📁 Loading: ${resultsFile}`);
@@ -945,6 +946,22 @@
 
           if (!data || data.length === 0) {
             throw new Error(`No data found in ${resultsFile}`);
+          }
+
+          // Load metadata (includes total scraped count)
+          if (metadataFile) {
+            try {
+              const metadataResponse = await fetch(metadataFile);
+              if (metadataResponse.ok) {
+                const metadata = await metadataResponse.json();
+                if (metadata.totalScraped) {
+                  window.TOTAL_SCRAPED = metadata.totalScraped;
+                  console.log(`📊 Total scraped: ${metadata.totalScraped}`);
+                }
+              }
+            } catch (err) {
+              console.log(`ℹ️ Metadata not available (${metadataFile})`);
+            }
           }
 
           // Load text cache (topic-specific, much smaller than full cache)

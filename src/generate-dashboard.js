@@ -62,6 +62,21 @@ export function generateDashboard(topicId, topicDescription) {
     }
   }
 
+  // Create metadata file with total scraped count
+  const metadataFile = `metadata-${topicId}.json`;
+  try {
+    const metadata = {
+      topicId,
+      topicDescription,
+      totalScraped,
+      generatedAt: new Date().toISOString()
+    };
+    writeFileSync(metadataFile, JSON.stringify(metadata, null, 2));
+    console.log(`📋 Created metadata: ${metadataFile} (${totalScraped} articles scraped)`);
+  } catch (err) {
+    console.error(`   ⚠️ Could not create metadata file: ${err.message}`);
+  }
+
   // Create symlink to dashboard.html instead of copying
   // The dashboard now auto-detects topic from filename and loads correct data
   const outputFile = `dashboard-${topicId}.html`;
