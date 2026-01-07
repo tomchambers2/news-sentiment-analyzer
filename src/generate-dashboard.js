@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, existsSync, createWriteStream } from "fs";
+import { readFileSync, writeFileSync, existsSync, createWriteStream, unlinkSync, symlinkSync } from "fs";
 import Database from 'better-sqlite3';
 
 /**
@@ -62,26 +62,26 @@ export function generateDashboard(topicId, topicDescription) {
     }
   }
 
-  const dashboardTemplate = readFileSync("dashboard.html", "utf-8");
-
-  // Replace results.json with topic-specific file and text cache
-  // Embed total scraped count in a script tag for the dashboard to use
-  const updatedDashboard = dashboardTemplate
-    .replace(/results\.json/g, resultsFile)
-    .replace(/cache\/3_scrape\/article_text\.json/g, topicTextCacheFile)
-    .replace(/<title>.*?<\/title>/, `<title>${topicDescription}</title>`)
-    .replace(/<h1>.*?<\/h1>/, `<h1>${topicDescription}</h1>`)
-    .replace(
-      /let data = \[\];/,
-      `let data = [];\n      // Total scraped articles count\n      const TOTAL_SCRAPED = ${totalScraped};`
-    );
-
-  // Write topic-specific dashboard
+  // Create symlink to dashboard.html instead of copying
+  // The dashboard now auto-detects topic from filename and loads correct data
   const outputFile = `dashboard-${topicId}.html`;
-  writeFileSync(outputFile, updatedDashboard);
-
-  console.log(`📊 Generated dashboard: ${outputFile}`);
-  console.log(`   View at: http://localhost:8000/${outputFile}\n`);
+  
+  try {
+    // Remove existing file/symlink if it exists
+    if (existsSync(outputFile)) {
+      unlinkSync(outputFile);
+    }
+    
+    // Create symlink
+    symlinkSync('dashboard.html', outputFile);
+    
+    console.log(`🔗 Created symlink: ${outputFile} -> dashboard.html`);
+    console.log(`   Changes to dashboard.html will show immediately!`);
+    console.log(`   View at: http://localhost:8000/${outputFile}\n`);
+  } catch (err) {
+    console.error(`   ⚠️ Could not create symlink: ${err.message}`);
+    console.log(`   You may need to manually create it: ln -s dashboard.html ${outputFile}`);
+  }
 
   return outputFile;
 }

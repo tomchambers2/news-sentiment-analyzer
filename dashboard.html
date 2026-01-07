@@ -739,6 +739,40 @@
       const articlesPerPage = 20;
       let textCache = {};
       let filterReasoning = {};
+      
+      // Auto-detect topic from filename (e.g., dashboard-cycling.html -> cycling)
+      const currentPath = window.location.pathname;
+      const filename = currentPath.split('/').pop();
+      const topicMatch = filename.match(/^dashboard-(.+)\.html$/);
+      const topicId = topicMatch ? topicMatch[1] : null;
+      
+      // Determine which files to load based on topic
+      const resultsFile = topicId ? `results-${topicId}.json` : 'results.json';
+      const textCacheFile = topicId ? `text-cache-${topicId}.json` : 'cache/3_scrape/article_text.json';
+      const filterReasoningFile = 'cache/2_filter/filter_output.json';
+      
+      console.log(`📊 Dashboard topic: ${topicId || 'default'}`);
+      console.log(`📁 Loading: ${resultsFile}`);
+      
+      // Topic configurations for dynamic titles
+      const TOPIC_CONFIGS = {
+        'cycling': {
+          title: 'Bristol Cycling News Sentiment Analysis',
+          heading: '🚴 Bristol Cycling News Sentiment Analysis'
+        },
+        'liveable-neighbourhoods': {
+          title: 'Bristol Liveable Neighbourhoods Sentiment Analysis',
+          heading: '🧱 Bristol Liveable Neighbourhoods Sentiment Analysis'
+        }
+      };
+      
+      // Update title and heading if topic detected
+      if (topicId && TOPIC_CONFIGS[topicId]) {
+        const config = TOPIC_CONFIGS[topicId];
+        document.title = config.title;
+        document.querySelector('h1').textContent = config.heading;
+        console.log(`✏️ Updated title to: ${config.title}`);
+      }
 
       // Helper function to generate all months between min and max dates
       function getAllMonthsBetween(minMonth, maxMonth) {
@@ -816,29 +850,29 @@
       // Load data
       async function loadData() {
         try {
-          const response = await fetch("results.json");
-          if (!response.ok) throw new Error("Failed to load results.json");
+          const response = await fetch(resultsFile);
+          if (!response.ok) throw new Error(`Failed to load ${resultsFile}`);
           data = await response.json();
 
           if (!data || data.length === 0) {
-            throw new Error("No data found in results.json");
+            throw new Error(`No data found in ${resultsFile}`);
           }
 
           // Load text cache (topic-specific, much smaller than full cache)
           try {
-            const cacheResponse = await fetch("cache/3_scrape/article_text.json");
+            const cacheResponse = await fetch(textCacheFile);
             if (cacheResponse.ok) {
               textCache = await cacheResponse.json();
-              console.log(`Loaded ${Object.keys(textCache).length} cached article texts`);
+              console.log(`✅ Loaded ${Object.keys(textCache).length} cached article texts`);
             }
           } catch (err) {
-            console.error("❌ Text cache failed to load:", err.message);
-            alert("Warning: Text cache not available - 'View Full Text' will not work");
+            console.log(`ℹ️ Text cache not available (${textCacheFile})`);
+            console.log("   'View Full Text' feature will not work");
           }
 
           // Load filter reasoning
           try {
-            const filterResponse = await fetch("cache/2_filter/filter_output.json");
+            const filterResponse = await fetch(filterReasoningFile);
             if (filterResponse.ok) {
               filterReasoning = await filterResponse.json();
               console.log(`Loaded filter reasoning for ${Object.keys(filterReasoning).length} articles`);
@@ -847,7 +881,7 @@
             }
           } catch (err) {
             console.error("❌ Filter reasoning failed to load:", err.message);
-            alert("Warning: Filter reasoning not available - classification reasons will show as missing");
+            console.log("   Filter explanations will show as missing");
           }
 
           updateStats();
@@ -855,7 +889,7 @@
         } catch (error) {
           document.getElementById(
             "error",
-          ).textContent = `Error: ${error.message}. Make sure results.json exists and contains data.`;
+          ).textContent = `Error: ${error.message}. Make sure ${resultsFile} exists and contains data.`;
           document.getElementById("error").style.display = "block";
         }
       }
