@@ -552,6 +552,50 @@
 
       <div class="chart-section">
         <div class="chart-header">
+          <h2 class="chart-title">Sentiment Distribution</h2>
+        </div>
+        <div class="chart-container">
+          <canvas id="sentimentChart"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-section">
+        <div class="chart-header">
+          <h2 class="chart-title">Sentiment by feature</h2>
+          <div>
+            <select id="sentimentFeatureSelect">
+              <option value="main_angle">Main Angle</option>
+              <option value="article_type">Article Type</option>
+              <option value="framing">Framing</option>
+              <option value="evidence_type">Evidence Type</option>
+              <option value="balance">Balance</option>
+              <option value="article_length">Article Length</option>
+              <option value="geographic_focus">Geographic Focus</option>
+              <option value="policy_mention">Policy Mention</option>
+              <option value="opposition_mentioned">Opposition Mentioned</option>
+              <option value="support_mentioned">Support Mentioned</option>
+              <option value="data_driven">Data Driven</option>
+              <option value="topic">Topic</option>
+              <option value="publication">Publication</option>
+              <option value="author">Author (top 10)</option>
+              <option value="secondary_angles">Secondary Angles</option>
+              <option value="primary_voices">Primary Voices</option>
+              <option value="stakeholders">Stakeholders</option>
+              <option value="political_parties">Political Parties</option>
+            </select>
+            <select id="sentimentDisplayMode" style="margin-left: 10px;">
+              <option value="percentage" selected>Percentage</option>
+              <option value="absolute">Absolute Numbers</option>
+            </select>
+          </div>
+        </div>
+        <div class="chart-container tall">
+          <canvas id="sentimentByFeatureChart"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-section">
+        <div class="chart-header">
           <h2 class="chart-title">Browse Articles</h2>
           <button class="clear-filters" onclick="clearFilters()">Clear Filters</button>
         </div>
@@ -615,10 +659,36 @@
 
       <div class="chart-section">
         <div class="chart-header">
-          <h2 class="chart-title">Sentiment Distribution</h2>
+          <h2 class="chart-title">Overall sentiment trend over time</h2>
+          <select id="trendFeatureSelect">
+            <option value="overall">Overall Average</option>
+            <option value="main_angle">By Angle</option>
+            <option value="article_type">By Article Type</option>
+            <option value="framing">By Framing</option>
+            <option value="evidence_type">By Evidence Type</option>
+            <option value="balance">By Balance</option>
+            <option value="article_length">By Article Length</option>
+            <option value="geographic_focus">By Geographic Focus</option>
+            <option value="policy_mention">By Policy Mention</option>
+            <option value="opposition_mentioned">By Opposition Mentioned</option>
+            <option value="support_mentioned">By Support Mentioned</option>
+            <option value="data_driven">By Data Driven</option>
+            <option value="topic">By Topic</option>
+            <option value="publication">By Publication</option>
+            <option value="author">By Author</option>
+            <option value="secondary_angles">By Secondary Angles</option>
+            <option value="primary_voices">By Primary Voices</option>
+            <option value="stakeholders">By Stakeholders</option>
+            <option value="political_parties">By Political Parties</option>
+          </select>
+          <select id="trendTimePeriod" style="margin-left: 10px;">
+            <option value="monthly">Monthly</option>
+            <option value="quarterly" selected>Quarterly</option>
+            <option value="yearly">Yearly</option>
+          </select>
         </div>
-        <div class="chart-container">
-          <canvas id="sentimentChart"></canvas>
+        <div class="chart-container tall">
+          <canvas id="sentimentTrendChart"></canvas>
         </div>
       </div>
 
@@ -653,80 +723,10 @@
 
       <div class="chart-section">
         <div class="chart-header">
-          <h2 class="chart-title">Sentiment by feature</h2>
-          <div>
-            <select id="sentimentFeatureSelect">
-              <option value="main_angle">Main Angle</option>
-              <option value="article_type">Article Type</option>
-              <option value="framing">Framing</option>
-              <option value="evidence_type">Evidence Type</option>
-              <option value="balance">Balance</option>
-              <option value="article_length">Article Length</option>
-              <option value="geographic_focus">Geographic Focus</option>
-              <option value="policy_mention">Policy Mention</option>
-              <option value="opposition_mentioned">Opposition Mentioned</option>
-              <option value="support_mentioned">Support Mentioned</option>
-              <option value="data_driven">Data Driven</option>
-              <option value="topic">Topic</option>
-              <option value="publication">Publication</option>
-              <option value="author">Author (top 10)</option>
-              <option value="secondary_angles">Secondary Angles</option>
-              <option value="primary_voices">Primary Voices</option>
-              <option value="stakeholders">Stakeholders</option>
-              <option value="political_parties">Political Parties</option>
-            </select>
-            <select id="sentimentDisplayMode" style="margin-left: 10px;">
-              <option value="percentage" selected>Percentage</option>
-              <option value="absolute">Absolute Numbers</option>
-            </select>
-          </div>
-        </div>
-        <div class="chart-container tall">
-          <canvas id="sentimentByFeatureChart"></canvas>
-        </div>
-      </div>
-
-      <div class="chart-section">
-        <div class="chart-header">
           <h2 class="chart-title">Articles over time</h2>
         </div>
         <div class="chart-container">
           <canvas id="timelineChart"></canvas>
-        </div>
-      </div>
-
-      <div class="chart-section">
-        <div class="chart-header">
-          <h2 class="chart-title">Overall sentiment trend over time</h2>
-          <select id="trendFeatureSelect">
-            <option value="overall">Overall Average</option>
-            <option value="main_angle">By Angle</option>
-            <option value="article_type">By Article Type</option>
-            <option value="framing">By Framing</option>
-            <option value="evidence_type">By Evidence Type</option>
-            <option value="balance">By Balance</option>
-            <option value="article_length">By Article Length</option>
-            <option value="geographic_focus">By Geographic Focus</option>
-            <option value="policy_mention">By Policy Mention</option>
-            <option value="opposition_mentioned">By Opposition Mentioned</option>
-            <option value="support_mentioned">By Support Mentioned</option>
-            <option value="data_driven">By Data Driven</option>
-            <option value="topic">By Topic</option>
-            <option value="publication">By Publication</option>
-            <option value="author">By Author</option>
-            <option value="secondary_angles">By Secondary Angles</option>
-            <option value="primary_voices">By Primary Voices</option>
-            <option value="stakeholders">By Stakeholders</option>
-            <option value="political_parties">By Political Parties</option>
-          </select>
-          <select id="trendTimePeriod" style="margin-left: 10px;">
-            <option value="monthly">Monthly</option>
-            <option value="quarterly" selected>Quarterly</option>
-            <option value="yearly">Yearly</option>
-          </select>
-        </div>
-        <div class="chart-container tall">
-          <canvas id="sentimentTrendChart"></canvas>
         </div>
       </div>
     </div>
