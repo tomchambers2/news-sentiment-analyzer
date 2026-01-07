@@ -654,26 +654,32 @@
       <div class="chart-section">
         <div class="chart-header">
           <h2 class="chart-title">Sentiment by feature</h2>
-          <select id="sentimentFeatureSelect">
-            <option value="main_angle">Main Angle</option>
-            <option value="article_type">Article Type</option>
-            <option value="framing">Framing</option>
-            <option value="evidence_type">Evidence Type</option>
-            <option value="balance">Balance</option>
-            <option value="article_length">Article Length</option>
-            <option value="geographic_focus">Geographic Focus</option>
-            <option value="policy_mention">Policy Mention</option>
-            <option value="opposition_mentioned">Opposition Mentioned</option>
-            <option value="support_mentioned">Support Mentioned</option>
-            <option value="data_driven">Data Driven</option>
-            <option value="topic">Topic</option>
-            <option value="publication">Publication</option>
-            <option value="author">Author (top 10)</option>
-            <option value="secondary_angles">Secondary Angles</option>
-            <option value="primary_voices">Primary Voices</option>
-            <option value="stakeholders">Stakeholders</option>
-            <option value="political_parties">Political Parties</option>
-          </select>
+          <div>
+            <select id="sentimentFeatureSelect">
+              <option value="main_angle">Main Angle</option>
+              <option value="article_type">Article Type</option>
+              <option value="framing">Framing</option>
+              <option value="evidence_type">Evidence Type</option>
+              <option value="balance">Balance</option>
+              <option value="article_length">Article Length</option>
+              <option value="geographic_focus">Geographic Focus</option>
+              <option value="policy_mention">Policy Mention</option>
+              <option value="opposition_mentioned">Opposition Mentioned</option>
+              <option value="support_mentioned">Support Mentioned</option>
+              <option value="data_driven">Data Driven</option>
+              <option value="topic">Topic</option>
+              <option value="publication">Publication</option>
+              <option value="author">Author (top 10)</option>
+              <option value="secondary_angles">Secondary Angles</option>
+              <option value="primary_voices">Primary Voices</option>
+              <option value="stakeholders">Stakeholders</option>
+              <option value="political_parties">Political Parties</option>
+            </select>
+            <select id="sentimentDisplayMode" style="margin-left: 10px;">
+              <option value="percentage" selected>Percentage</option>
+              <option value="absolute">Absolute Numbers</option>
+            </select>
+          </div>
         </div>
         <div class="chart-container tall">
           <canvas id="sentimentByFeatureChart"></canvas>
@@ -962,6 +968,9 @@
           .getElementById("sentimentFeatureSelect")
           .addEventListener("change", createSentimentByFeatureChart);
         document
+          .getElementById("sentimentDisplayMode")
+          .addEventListener("change", createSentimentByFeatureChart);
+        document
           .getElementById("trendFeatureSelect")
           .addEventListener("change", createSentimentTrendChart);
         document
@@ -1073,6 +1082,7 @@
 
       function createSentimentByFeatureChart() {
         const feature = document.getElementById("sentimentFeatureSelect").value;
+        const displayMode = document.getElementById("sentimentDisplayMode").value;
         const ctx = document.getElementById("sentimentByFeatureChart");
 
         const featureData = {};
@@ -1114,6 +1124,17 @@
           labels = sorted.map((s) => s[0]);
         }
 
+        // Calculate data based on display mode
+        const getData = (label, sentiment) => {
+          const count = featureData[label][sentiment];
+          if (displayMode === "percentage") {
+            const total = featureData[label].supportive + featureData[label].negative + 
+                         featureData[label].neutral + featureData[label].mixed;
+            return total > 0 ? (count / total) * 100 : 0;
+          }
+          return count;
+        };
+
         if (charts.sentimentByFeature) charts.sentimentByFeature.destroy();
 
         charts.sentimentByFeature = new Chart(ctx, {
@@ -1123,22 +1144,22 @@
             datasets: [
               {
                 label: "Supportive",
-                data: labels.map((l) => featureData[l].supportive),
+                data: labels.map((l) => getData(l, "supportive")),
                 backgroundColor: "#10b981",
               },
               {
                 label: "Negative",
-                data: labels.map((l) => featureData[l].negative),
+                data: labels.map((l) => getData(l, "negative")),
                 backgroundColor: "#ef4444",
               },
               {
                 label: "Neutral",
-                data: labels.map((l) => featureData[l].neutral),
+                data: labels.map((l) => getData(l, "neutral")),
                 backgroundColor: "#94a3b8",
               },
               {
                 label: "Mixed",
-                data: labels.map((l) => featureData[l].mixed),
+                data: labels.map((l) => getData(l, "mixed")),
                 backgroundColor: "#f59e0b",
               },
             ],
@@ -1149,11 +1170,33 @@
             indexAxis: labels.length > 8 ? "y" : "x",
             plugins: {
               legend: { position: "top" },
+              tooltip: {
+                callbacks: {
+                  label: function(context) {
+                    let label = context.dataset.label || '';
+                    if (label) {
+                      label += ': ';
+                    }
+                    if (displayMode === "percentage") {
+                      label += context.parsed.y.toFixed(1) + '%';
+                    } else {
+                      label += context.parsed.y;
+                    }
+                    return label;
+                  }
+                }
+              }
             },
             scales: {
               x: {
                 stacked: true,
                 beginAtZero: true,
+                max: displayMode === "percentage" ? 100 : undefined,
+                ticks: {
+                  callback: function(value) {
+                    return displayMode === "percentage" ? value + '%' : value;
+                  }
+                }
               },
               y: { stacked: true },
             },
