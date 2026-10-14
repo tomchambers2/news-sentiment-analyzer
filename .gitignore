@@ -6,3 +6,4 @@ text-cache-*.json
 test-new-prompt.js
 export-filter-reasoning.js
 *.zip
+*.zip
